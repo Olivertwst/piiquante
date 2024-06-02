@@ -137,19 +137,22 @@ exports.likeSauce = (req, res, next) => {
   }).then(
     (sauce) => {
       if (currentLikes === 1 && !sauce.usersLiked.includes(userIdInfo)) {
+        // FIXME RESET USERS LIKES AND DISLIKES
         console.log("user liking sauce now")
         sauce.likes++
         sauce.usersLiked.push(userIdInfo)
       }
-      else if (currentLikes === 0 && (sauce.usersLiked.includes(userIdInfo) || sauce.usersDisliked.includes(userIdInfo))) {
+      else if (currentdisLikes === 0 && (sauce.usersLiked.includes(userIdInfo) || sauce.usersDisliked.includes(userIdInfo))) {
+        // FIXME RESET USERS LIKES AND DISLIKES
         console.log("removing users who like or dislike")
-        sauce.dislikes--
-        sauce.usersDisliked--
+        //sauce.dislikes--
+        //sauce.usersDisliked--
 
       }
       else if (currentLikes === -1 && !sauce.usersDisliked.includes(userIdInfo)) {
+        // FIXME RESET USERS LIKES AND DISLIKES
         console.log("disliking sauce")
-        sauce.dislikes--
+        sauce.dislikes++
         sauce.usersDisliked.push(userIdInfo)
       }
       Sauce.updateOne({ _id: sauceId }, sauce).then(
@@ -174,3 +177,10 @@ exports.likeSauce = (req, res, next) => {
     }
   );
 };
+
+// TODO DECLARE FUNCTION THE RESETS USERS LIKES AND DISLIKES
+function resetUserVote(sauce) {
+  //TODO CHECK TO SEE IF USER IS IN USERS LIKED ARRAY
+  // IF SO THEN REMOVE THE USER ID FROM THE USERS LIKED ARRAY AND DECREASE THE USERS LIKED NUMBER BY 1
+  // TODO REPEAT FOR DISLIKES 
+}
