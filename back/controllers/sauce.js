@@ -129,42 +129,42 @@ exports.getAllSauce = (req, res, next) => {
 };
 
 exports.likeSauce = (req, res, next) => {
-  let userIdInfo = req.body.userId;
-  let currentLikes = req.body.like;
-  let sauceId = req.params.id;
-  Sauce.findOne({
-    _id: req.params.id
-  }).then(
-    (sauce) => {
-      if (currentLikes === 1 && !sauce.usersLiked.includes(userIdInfo)) {
-        // FIXME RESET USERS LIKES AND DISLIKES
-        console.log("user liking sauce now")
-        sauce.likes++
-        sauce.usersLiked.push(userIdInfo)
-      }
-      else if (currentdisLikes === 0 && (sauce.usersLiked.includes(userIdInfo) || sauce.usersDisliked.includes(userIdInfo))) {
-        // FIXME RESET USERS LIKES AND DISLIKES
-        console.log("removing users who like or dislike")
-        //sauce.dislikes--
-        //sauce.usersDisliked--
-
-      }
-      else if (currentLikes === -1 && !sauce.usersDisliked.includes(userIdInfo)) {
-        // FIXME RESET USERS LIKES AND DISLIKES
-        console.log("disliking sauce")
-        sauce.dislikes++
-        sauce.usersDisliked.push(userIdInfo)
-      }
-      Sauce.updateOne({ _id: sauceId }, sauce).then(
-        () => {
-          res.status(201).json({
-            message: 'Sauce liked successfully!'
-          });
-        }
-      ).catch(
-        (error) => {
-          res.status(400).json({
-            error: error.message
+	Sauce.findOne({_id: req.params.id}).then((sauce) => {
+		if (req.body.like === 1){
+			sauce.usersLiked.push(req.body.userId);
+			likeSauce = ({
+				likes: ++sauce.likes,
+				usersLiked: sauce.usersLiked,
+			});
+		} else if(req.body.like === -1) {
+			likeSauce = ({
+				$push: { usersDisliked: req.body.userId },
+				$inc: { dislikes: +1 },
+			});
+		} else if (req.body.like === -0 && sauce.usersLiked.includes(req.body.userId)){
+			likeSauce = ({
+				$pull: { usersLiked: req.body.userId },
+				$inc: { likes: -1 },
+			});
+		} else if (req.body.like === -0 && sauce.usersDisliked.includes(req.body.userId)){
+			likeSauce = ({
+				$pull: { usersDisliked: req.body.userId },
+				$inc: { dislikes: -1 },
+			});
+		} else {
+			console.log('Likes are being hacked!  Sweet');
+			res.status(201).json({
+				message: 'opps'
+			});
+		}
+		Sauce.updateOne({_id: req.params.id}, likeSauce).then(()=> {
+		
+			res.status(201).json({
+				message: 'Sauce updated'
+			});
+		}).catch((error) => {
+			res.status(400).json({
+				error: error
           });
         }
       );
@@ -177,10 +177,3 @@ exports.likeSauce = (req, res, next) => {
     }
   );
 };
-
-// TODO DECLARE FUNCTION THE RESETS USERS LIKES AND DISLIKES
-function resetUserVote(sauce) {
-  //TODO CHECK TO SEE IF USER IS IN USERS LIKED ARRAY
-  // IF SO THEN REMOVE THE USER ID FROM THE USERS LIKED ARRAY AND DECREASE THE USERS LIKED NUMBER BY 1
-  // TODO REPEAT FOR DISLIKES 
-}
