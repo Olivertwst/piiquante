@@ -129,42 +129,43 @@ exports.getAllSauce = (req, res, next) => {
 };
 
 exports.likeSauce = (req, res, next) => {
-	Sauce.findOne({_id: req.params.id}).then((sauce) => {
-		if (req.body.like === 1){
-			sauce.usersLiked.push(req.body.userId);
-			likeSauce = ({
-				likes: ++sauce.likes,
-				usersLiked: sauce.usersLiked,
-			});
-		} else if(req.body.like === -1) {
-			likeSauce = ({
-				$push: { usersDisliked: req.body.userId },
-				$inc: { dislikes: +1 },
-			});
-		} else if (req.body.like === -0 && sauce.usersLiked.includes(req.body.userId)){
-			likeSauce = ({
-				$pull: { usersLiked: req.body.userId },
-				$inc: { likes: -1 },
-			});
-		} else if (req.body.like === -0 && sauce.usersDisliked.includes(req.body.userId)){
-			likeSauce = ({
-				$pull: { usersDisliked: req.body.userId },
-				$inc: { dislikes: -1 },
-			});
-		} else {
-			console.log('Likes are being hacked!  Sweet');
-			res.status(201).json({
-				message: 'opps'
-			});
-		}
-		Sauce.updateOne({_id: req.params.id}, likeSauce).then(()=> {
-		
-			res.status(201).json({
-				message: 'Sauce updated'
-			});
-		}).catch((error) => {
-			res.status(400).json({
-				error: error
+  let userIdInfo = req.body.userId;
+
+  let currentLikes = req.body.like;
+  let sauceId = req.params.id;
+  Sauce.findOne({ _id: req.params.id }).then(
+    (sauce) => {
+      console.log((sauce.usersLiked))
+      if (currentLikes === 1 && !sauce.usersLiked.includes(userIdInfo)) {
+        // FIXME RESET USERS LIKES AND DISLIKES
+        resetUserVote(sauce, userIdInfo)
+        console.log("user liking sauce now")
+        sauce.likes++
+        sauce.usersLiked.push(userIdInfo)
+      }
+      else if (currentLikes === 0 && (sauce.usersLiked.includes(userIdInfo) || sauce.usersDisliked.includes(userIdInfo))) {
+        // FIXME RESET USERS LIKES AND DISLIKES
+        resetUserVote(sauce, userIdInfo)
+        console.log("removing users who like or dislike")
+
+      }
+      else if (currentLikes === -1 && !sauce.usersDisliked.includes(userIdInfo)) {
+        // FIXME RESET USERS LIKES AND DISLIKES
+        resetUserVote(sauce, userIdInfo)
+        console.log("disliking sauce")
+        sauce.dislikes++
+        sauce.usersDisliked.push(userIdInfo)
+      }
+      Sauce.updateOne({ _id: sauceId }, sauce).then(
+        () => {
+          res.status(201).json({
+            message: 'Sauce liked successfully!'
+          });
+        }
+      ).catch(
+        (error) => {
+          res.status(400).json({
+            error: error.message
           });
         }
       );
@@ -177,3 +178,26 @@ exports.likeSauce = (req, res, next) => {
     }
   );
 };
+
+// TODO DECLARE FUNCTION THE RESETS USERS LIKES AND DISLIKES
+function resetUserVote(sauce, userIdInfo) {
+  //TODO CHECK TO SEE IF USER IS IN USERS LIKED ARRAY
+  if (sauce.usersLiked.includes(userIdInfo)) {
+    sauce.likes--
+    console.log('user has already liked sauce')
+    sauce.usersLiked = sauce.usersLiked.filter(function (userId) {
+      return userId !== userIdInfo;
+    });
+  }
+  
+
+  // IF SO THEN REMOVE THE USER ID FROM THE USERS LIKED ARRAY AND DECREASE THE USERS LIKED NUMBER BY 1
+  // TODO REPEAT FOR DISLIKES 
+  if (sauce.usersDisliked.includes(userIdInfo)) {
+    sauce.dislikes--
+    console.log('user has already Disliked sauce')
+    sauce.usersDisliked = sauce.usersDisliked.filter(function (userId) {
+      return userId !== userIdInfo;
+    });
+  }
+}
